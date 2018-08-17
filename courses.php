@@ -1,3 +1,4 @@
+
 <?php
 
 /*
@@ -15,11 +16,17 @@ ini_set('error_reporting',
 
 main();
 
+
 #-----------------------------------------------------------------------------
 # FUNCTIONS
 #-----------------------------------------------------------------------------
 
 function main() {
+
+
+    $daysOfWeek = ["All","Monday","Tuesday","Wednesday","Thursday","Friday"];
+
+
 
     // echo html head section
     echo '<html>';
@@ -29,7 +36,6 @@ function main() {
 
     // open html body section
     echo '<body>';
-
     // in html body section, if gpcorser's schedule, then print gpcorser's heading, else print general CS/CIS/CSIS heading
     if (!strcmp($_GET['instructor'], 'gpcorser')) {
         echo '<h1 align="center">George Corser, PhD</h1>';
@@ -42,10 +48,31 @@ function main() {
         echo $_GET['instructor'] ? ' - Instructor: ' . strtoupper($_GET['instructor']) : "";
         echo '</h2>';
     }
+    foreach($daysOfWeek as $day){
+        echo("<a href='courses.php?day=$day'>".$day."</a>&nbsp;&nbsp;&nbsp;");
+    }
+
+    $d = '';
+
+    switch ($_GET['day']){
+        case 'All':
+            $d = '';
+        case 'Monday':
+            $d = 'M';
+        case 'Tuesday':
+            $d = 'T';
+        case 'Wednesday':
+            $d = 'W';
+        case 'Thursday':
+            $d = 'R';
+        case 'Friday':
+            $d = 'F';
+    }
+
 
     // if user entered something in a search box, then call printCourses() to filter 
     if ($_GET['prefix'] != "" || $_GET['courseNumber'] != "" || $_GET['instructor'] != "") {
-        printCourses($_GET['prefix'], $_GET['courseNumber'], $_GET['instructor']);
+        printCourses($d, $_GET['prefix'], $_GET['courseNumber'], $_GET['instructor']);
     }
     // otherwise call printSemester() for all courses for each semester
     else {
@@ -96,7 +123,7 @@ function printForm() {
 #-----------------------------------------------------------------------------
 // print all courses for a given filter
 
-function printCourses($prefix, $courseNumber, $instructor) {
+function printCourses($d, $prefix, $courseNumber, $instructor) {
 
     // call printListing() for each semester using all parameters
     /*
@@ -107,22 +134,22 @@ function printCourses($prefix, $courseNumber, $instructor) {
      */
 
     $term = "18/SP";
-    $string = "https://api.svsu.edu/courses?prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
+    $string = "https://api.svsu.edu/courses?day=$day&prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
     echo "<h3>2018 - Spring</h3>";
     printListing($string);
 
     $term = "18/SU";
-    $string = "https://api.svsu.edu/courses?prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
+    $string = "https://api.svsu.edu/courses?day=$day&prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
     echo "<h3>2018 - Summer</h3>";
     printListing($string);
 
     $term = "18/FA";
-    $string = "https://api.svsu.edu/courses?prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
+    $string = "https://api.svsu.edu/courses?day=$day&prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
     echo "<h3>2018 - Fall</h3>";
     printListing($string);
 
     $term = "19/WI";
-    $string = "https://api.svsu.edu/courses?prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
+    $string = "https://api.svsu.edu/courses?day=$day&prefix=$prefix&courseNumber=$courseNumber&term=$term&instructor=$instructor";
     echo "<h3>2019 - Winter</h3>";
     printListing($string);
 }
@@ -167,17 +194,49 @@ function printSemester($term) {
 
 function printListing($apiCall) {
 
+    $d = $_GET['day'];
+
+    switch ($d){
+        case "All":
+            $dd = '';
+            break;
+        case "Monday":
+            $dd = 'M';
+            break;
+        case "Tuesday":
+            $dd = 'T';
+            break;
+        case "Wednesday":
+            $dd = 'W';
+            break;
+        case "Thursday":
+            $dd = 'R';
+            break;
+        case "Friday":
+            $dd = 'F';
+    }
+
+
+//    echo($dd);exit();
     $json = curl_get_contents($apiCall);
     // $json = curl_get_contents("https://api.svsu.edu/courses?prefix=CIS&term=16/SP");
     // the line of code below suddenly stopped working!
     // $json = file_get_contents($apiCall); 
     $obj = json_decode($json);
 
+
     if (!($obj->courses == null)) {
 
         echo "<table border='3' width='100%'>";
 
         foreach ($obj->courses as $course) {
+//            echo($course->meetingTimes[0]->days)."--";
+
+            if($dd != "") {
+                if (strcmp(substr($course->meetingTimes[0]->days, 0, 1), $dd)
+//                or strcmp(substr($course->meetingTimes[0]->days,1,1), $dd)
+                ) continue;
+            }
 
             $building = strtoupper(trim($_GET['building']));
             $buildingMatch = false;
@@ -202,28 +261,28 @@ function printListing($apiCall) {
                 continue;
 
             // different <tr bgcolor=...> for each professor
-            switch ($course->meetingTimes[0]->instructor) {
-                case "james":            // 1
-                    $printline = "<tr bgcolor='#B19CD9'>";  // pastel purple
-                    break;
-                case "icho":             // 2
-                    $printline = "<tr bgcolor='lightblue'>";  // light blue
-                    break;
-                case "krahman":           // 3 
-                    $printline = "<tr bgcolor='pink'>";  // pink
-                    break;
-                case "gpcorser":           // 4
-                    $printline = "<tr bgcolor='yellow'>";   // yellow
-                    break;
-                case "pdharam":           // 5
-                    $printline = "<tr bgcolor='#77DD77'>";  // pastel green (light green)
-                    break;
-                case "amulahuw":           // 6
-                    $printline = "<tr bgcolor='#FFB347'>";  // pastel orange
-                    break;
-                default:
-                    $printline = "<tr>"; // no background color
-            }
+//            switch ($course->meetingTimes[0]->instructor) {
+//                case "james":            // 1
+//                    $printline = "<tr bgcolor='#B19CD9'>";  // pastel purple
+//                    break;
+//                case "icho":             // 2
+//                    $printline = "<tr bgcolor='lightblue'>";  // light blue
+//                    break;
+//                case "krahman":           // 3
+//                    $printline = "<tr bgcolor='pink'>";  // pink
+//                    break;
+//                case "gpcorser":           // 4
+//                    $printline = "<tr bgcolor='yellow'>";   // yellow
+//                    break;
+//                case "pdharam":           // 5
+//                    $printline = "<tr bgcolor='#77DD77'>";  // pastel green (light green)
+//                    break;
+//                case "amulahuw":           // 6
+//                    $printline = "<tr bgcolor='#FFB347'>";  // pastel orange
+//                    break;
+//                default:
+//                    $printline = "<tr>"; // no background color
+//            }
 
             $printline .= "<td width='13%'>" . $course->prefix . " " . $course->courseNumber . "*" . $course->section . "</td>";
             $printline .= "<td width='40%'>" . $course->title . " (" . $course->lineNumber . ")" . "</td>";
