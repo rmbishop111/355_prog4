@@ -233,8 +233,8 @@ function printListing($apiCall) {
 //            echo($course->meetingTimes[0]->days)."--";
 
             if($dd != "") {
-                if (strcmp(substr($course->meetingTimes[0]->days, 0, 1), $dd)
-//                or strcmp(substr($course->meetingTimes[0]->days,1,1), $dd)
+                if (!strcmp(substr($course->meetingTimes[0]->days, 0, 1), $dd)
+                xor strcmp(substr($course->meetingTimes[0]->days,1,1), $dd)
                 ) continue;
             }
 
